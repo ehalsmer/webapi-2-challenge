@@ -24,13 +24,24 @@ server.get('/api/posts', (req, res) => {
 // Sends back an id object
 server.post('/api/posts', (req, res) => {
     const newPost = req.body;
-    db.insert(newPost)
-    .then((idObj) => {
-        res.status(201).json(idObj)
-    })
-    .catch((error) => {
-        res.status(500).json( {message: 'There was an error creating this post'} )
-    })
+    const { title, contents } = req.body;
+    if (title && contents){
+        db.insert(newPost)
+        .then((idObj) => {
+            db.findById(idObj.id)
+            .then(post => {
+                res.status(201).json(post)
+            })
+            .catch(error => {
+                res.status(500).json({message: 'Error getting new post'})
+            })
+        })
+        .catch((error) => {
+            res.status(500).json( {error: "There was an error while saving the post to the database"} )
+        })
+    } else {
+        res.status(400).json( {errorMessage: 'Please provide title and contents for the post.'})
+    }
 })
 
 
@@ -42,7 +53,7 @@ server.get('/api/posts/:id', (req, res) => {
         if (response.length > 0){
             res.status(200).json(response)
         } else {
-            res.status(400).json( {message: 'Post not found'} ) 
+            res.status(404).json( {message: 'Post not found'} ) 
         }
     })
     .catch((error) => {
@@ -58,7 +69,7 @@ server.put('/api/posts/:id', (req, res) => {
     db.findById(id)
     .then((response) => {
         if (response.length == 0){
-            res.status(400).json( {message: 'Post not found'} ) 
+            res.status(404).json( {message: 'Post not found'} ) 
         }
         return response;
     })
@@ -79,7 +90,7 @@ server.delete('/api/posts/:id', (req, res) => {
     db.findById(id)
     .then((response) => {
         if (response.length == 0){
-            res.status(400).json( {message: 'Post not found'} ) 
+            res.status(404).json( {message: 'Post not found'} ) 
         }
         return response;
     })
@@ -103,7 +114,7 @@ server.get('/api/posts/:id/comments', (req, res) => {
     db.findById(id)
     .then((response) => {
         if (response.length == 0){
-            res.status(400).json( {message: 'Post not found'} ) 
+            res.status(404).json( {message: 'Post not found'} ) 
         }
         return response;
     })
@@ -113,7 +124,7 @@ server.get('/api/posts/:id/comments', (req, res) => {
             if (response.length > 0){
                 res.status(200).json(response);
             } else {
-                res.status(400).json({message: 'No comments found for this post'});
+                res.status(404).json({message: 'No comments found for this post'});
             }
         })
         .catch((error) => {
@@ -129,7 +140,7 @@ server.post('/api/posts/:id/comments', (req, res) => {
     db.findById(id)
     .then((response) => {
         if (response.length == 0){
-            res.status(400).json( {message: 'Post not found'} ) 
+            res.status(404).json( {message: 'Post not found'} ) 
         }
         return response;
     })
