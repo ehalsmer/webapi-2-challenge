@@ -38,8 +38,12 @@ server.post('/api/posts', (req, res) => {
 server.get('/api/posts/:id', (req, res) => {
     const id = req.params.id;
     db.findById(id)
-    .then((post) => {
-        res.status(200).json(post)
+    .then((response) => {
+        if (response.length > 0){
+            res.status(200).json(response)
+        } else {
+            res.status(400).json( {message: 'Post not found'} ) 
+        }
     })
     .catch((error) => {
         res.status(500).json( {message: 'There was an error getting that post'} )
@@ -52,11 +56,41 @@ server.put('/api/posts/:id', (req, res) => {
     const id = req.params.id;
     const updatedPost = req.body
     db.update(id, updatedPost)
-    .then(() => {
-        res.status(201).json(updatedPost)
+    .then((response) => {
+        if (response.length > 0){
+            res.status(201).json(updatedPost)
+        } else {
+            res.status(400).json( {message: 'Post not found'} )
+        }
     })
     .catch((error) => {
-        res.status(500).json( {message: 'There was an error updating that post'} )
+        res.status(500).json( {message: 'There was an error updating the post'} )
+    })
+})
+
+
+// Removes the post with the specified id and returns the deleted post object. 
+// You may need to make additional calls to the database in order to satisfy this requirement.
+server.delete('/api/posts/:id', (req, res) => {
+    const id = req.params.id;
+    db.findById(id)
+    .then((response) => {
+        if (response.length == 0){
+            res.status(400).json( {message: 'Post not found'} ) 
+        }
+        return response;
+    })
+    .then((response) => {
+        db.remove(id)
+        .then(() => {
+            res.status(200).json(response)
+        })
+        .catch((error) => {
+            res.status(500).json( {message: 'There was an error while deleting that post'} )
+        })
+    })
+    .catch((error) => {
+        res.status(500).json( {message: 'There was an error getting that post'} )
     })
 })
 
