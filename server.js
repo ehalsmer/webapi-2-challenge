@@ -55,13 +55,16 @@ server.get('/api/posts/:id', (req, res) => {
 server.put('/api/posts/:id', (req, res) => {
     const id = req.params.id;
     const updatedPost = req.body
+    db.findById(id)
+    .then((response) => {
+        if (response.length == 0){
+            res.status(400).json( {message: 'Post not found'} ) 
+        }
+        return response;
+    })
     db.update(id, updatedPost)
     .then((response) => {
-        if (response.length > 0){
-            res.status(201).json(updatedPost)
-        } else {
-            res.status(400).json( {message: 'Post not found'} )
-        }
+        res.status(201).json(updatedPost)
     })
     .catch((error) => {
         res.status(500).json( {message: 'There was an error updating the post'} )
@@ -92,6 +95,53 @@ server.delete('/api/posts/:id', (req, res) => {
     .catch((error) => {
         res.status(500).json( {message: 'There was an error getting that post'} )
     })
+})
+
+// Returns an array of all the comment objects associated with the post with the specified id.
+server.get('/api/posts/:id/comments', (req, res) => {
+    const id = req.params.id;
+    db.findById(id)
+    .then((response) => {
+        if (response.length == 0){
+            res.status(400).json( {message: 'Post not found'} ) 
+        }
+        return response;
+    })
+    .then(
+        db.findPostComments(id)
+        .then((response) => {
+            if (response.length > 0){
+                res.status(200).json(response);
+            } else {
+                res.status(400).json({message: 'No comments found for this post'});
+            }
+        })
+        .catch((error) => {
+            res.status(500).json({message: 'There was an error getting the comments'})
+        })
+    )
+})
+
+// Creates a comment for the post with the specified id using information sent inside of the request body.
+server.post('/api/posts/:id/comments', (req, res) => {
+    const id = req.params.id;
+    const newComment = req.body;
+    db.findById(id)
+    .then((response) => {
+        if (response.length == 0){
+            res.status(400).json( {message: 'Post not found'} ) 
+        }
+        return response;
+    })
+    .then(
+        db.insertComment(newComment)
+        .then((idObj) => {
+            res.status(200).json(idObj);
+        })
+        .catch((error) => {
+            res.status(404).json({message: 'Post not found'})
+        })
+    )
 })
 
 module.exports = server;
